@@ -2,7 +2,7 @@
 import jwt from 'jsonwebtoken';
 
 // Internal dependencies
-import DeepProxy from '../utils/DeepProxy.js';
+import DeepProxy from './DeepProxy.js';
 
 // SessionPayload Class -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 

@@ -22,5 +22,8 @@
   "bugs": {
     "url": "https://github.com/adamtmorgan/client-session/issues"
   },
-  "homepage": "https://github.com/adamtmorgan/client-session#readme"
+  "homepage": "https://github.com/adamtmorgan/client-session#readme",
+  "dependencies": {
+    "jsonwebtoken": "^8.5.1"
+  }
 }
