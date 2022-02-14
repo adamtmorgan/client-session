@@ -1,0 +1,26 @@
+{
+  "name": "client-session",
+  "version": "0.0.1",
+  "description": "Client-side session storage and management for Express in Node.js.",
+  "main": "client-session.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/adamtmorgan/client-session.git"
+  },
+  "keywords": [
+    "JWT",
+    "session",
+    "cookie",
+    "express",
+    "middleware"
+  ],
+  "author": "Adam Morgan",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/adamtmorgan/client-session/issues"
+  },
+  "homepage": "https://github.com/adamtmorgan/client-session#readme"
+}
