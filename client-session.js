@@ -63,7 +63,7 @@ export default class ClientSession {
 			algorithm: 'HS256',
 		};
 
-		// Issues JWT with only UUID if not already present.
+		// Issues JWT if not already present.
 		if (req.cookies.accessToken === undefined) {
 			req.clientSession = new SessionPayload(undefined, (tokenPayload) => {
 				const token = jwt.sign(
