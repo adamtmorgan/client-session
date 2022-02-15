@@ -16,7 +16,7 @@ Because client-session uses **stateless tokens** for session storage, this does 
 
 2. The ability to store more than 4kb worth of data in a session (session data is stored in cookies using this middleware).
 
-## Getting started
+## Setup
 
 1. Run `npm install`.
 
@@ -30,13 +30,11 @@ Because client-session uses **stateless tokens** for session storage, this does 
 
 4. Use`clientSession.middleware.bind(clientSession)` on any routes you wish to use client-session. We use the `bind()` method on itself to preserve `this` when used inside of the `app.use()` method.
    
-   1.  IMPORTANT: use client session after `cookie-parser` so the client-session has access to to the `req.cookies` object.
+   1. IMPORTANT: use client session after `cookie-parser` so the client-session has access to to the `req.cookies` object.
 
-5. Profit! Now, your routes will have access to the `req.clientSession` object. Simply add properties to the object and they will be sent to the client on every response.
+5. Profit! Now, your routes will have access to the `req.clientSession` object.
 
-## Full Example:
-
-In this example, we have a simple counter, where the current counter value is stored in a JWT cookie. On every refresh to the root route, the session is read from the client, updated, and re-sent.
+### Setup example:
 
 ```javascript
 import express from 'express';
@@ -49,8 +47,52 @@ app.use(cookieParser());
 // Use client-session
 import ClientSession from 'client-session';
 const clientSession = new ClientSession({
-	secret: 'Shhhhhh',
-	expiresIn: 7 * 24 * 60 * 60, // Expires in 7 days.
+    secret: 'Shhhhhh',
+    expiresIn: 7 * 24 * 60 * 60, // Expires in 7 days.
+});
+// Bind clientSession object to itself to preserve 'this'
+app.use(clientSession.middleware.bind(clientSession));
+```
+
+## Usage
+
+On any routes you have "used" client-session on, the `clientSession` object will be available on Express' `req` object. For example, if we wanted to track a user's name, we could add the following to our route logic:
+
+```javascript
+app.get('/', (req, res) => {
+    req.clientSession.name = 'John'; 
+});
+```
+
+Now the value of `req.clientSession.name` will persist for any future requests made by the client.
+
+
+
+You can clear/delete the session any time using the `clientSession.terminate()` method.
+
+```javascript
+req.clientSession.terminate();
+```
+
+The session token will be removed on the next response sent to the client.
+
+## Full Example:
+
+In this example, we have a simple counter. On every refresh to the root route, the session is read from the client cookie, updated, and re-sent when Express' `res.send()` method is called. When the stored value reaches 5, the session is then cleared using the `res.clientSession.terminate()` method.
+
+```javascript
+import express from 'express';
+const app = express();
+
+// Use cookie-parser
+import cookieParser from 'cookie-parser';
+app.use(cookieParser());
+
+// Use client-session
+import ClientSession from 'client-session';
+const clientSession = new ClientSession({
+    secret: 'Shhhhhh',
+    expiresIn: 7 * 24 * 60 * 60, // Expires in 7 days.
 });
 // Bind clientSession object to itself to preserve 'this'
 app.use(clientSession.middleware.bind(clientSession));
@@ -59,12 +101,20 @@ app.use(clientSession.middleware.bind(clientSession));
 app.get('/', (req, res) => {
     // req.clientSession object is now exposed
     if (req.clientSession.counter === undefined) {
-        req.clientSession.counter = 0;
-        return res.send(JSON.stringify(req.clientSession.counter));
-    }
-    
-    req.clientSession.counter++;
-    return res.send(JSON.stringify(req.clientSession.counter));
+		req.clientSession.counter = 0;
+		return res.send(JSON.stringify(req.clientSession.counter));
+	}
+
+	req.clientSession.counter++;
+	console.log(req.clientSession);
+
+	if (req.clientSession.counter >= 5) {
+		req.clientSession.terminate();
+		console.log(req.clientSession);
+		return res.send(JSON.stringify('Session has been cleared.'));
+	}
+
+	return res.send(JSON.stringify(req.clientSession.counter));
 });
 
 // Listen!
@@ -75,7 +125,5 @@ app.listen(port, () => {
 ```
 
 To see how it's working in your browser, simply visit the root route and look at your cookies. You can then go a step further and decode your JWT using something like [JSToolSet](https://www.jstoolset.com/jwt) to view the session state sent to your client.
-
-
 
 Enjoy!
