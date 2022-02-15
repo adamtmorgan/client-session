@@ -104,11 +104,9 @@ app.get('/', (req, res) => {
     }
 
     req.clientSession.counter++;
-    console.log(req.clientSession);
 
     if (req.clientSession.counter >= 5) {
         req.clientSession.terminate();
-        console.log(req.clientSession);
         return res.send(JSON.stringify('Session has been cleared.'));
     }
 
