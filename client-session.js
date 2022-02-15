@@ -4,41 +4,55 @@ import jwt from 'jsonwebtoken';
 // Internal dependencies
 import DeepProxy from './DeepProxy.js';
 
-// SessionPayload Class -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+// SessionObj Class -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-export class SessionPayload {
+export class SessionObj {
 	// Fields
 	#data;
 	#issueToken;
 
-	constructor(prevPayload, issueToken) {
+	constructor(prevPayload, ip, issueToken, terminateCallback) {
 		const self = this;
 
+		// Passes token payload to token issuer in ClientSession
 		this.#issueToken = (payload) => {
 			issueToken(payload);
 		};
 
 		if (prevPayload !== undefined) {
 			this.#data = prevPayload;
+			this.#data.terminate = () => {
+				terminateCallback();
+			};
 		} else {
 			this.#data = {};
+			this.#data.originIP = ip;
+			this.#data.terminate = () => {
+				terminateCallback();
+			};
 		}
 
 		// Tracks object tree.
 		// Generates new JWT and applies it to response cookie on property set.
 		return new DeepProxy(this.#data, {
-			set(_target, _key, _value, _receiver) {
-				self.#issueToken(self.json());
+			set(key, _value, _receiver) {
+				if (key === `originIP` || key === `terminate`) {
+					throw new Error(
+						`req.clientSession.${key} is a reserved property and cannot be set.`
+					);
+				}
+				self.#issueToken(JSON.stringify(self.#data));
 			},
 
-			deleteProperty(_target, _key) {
-				self.#issueToken(self.json());
+			deleteProperty(_target, key) {
+				if (key === `originIP` || key === `terminate`) {
+					throw new Error(
+						`req.clientSession.${key} is a reserved property and cannot be deleted.`
+					);
+				}
+				self.#issueToken(JSON.stringify(self.#data));
 			},
 		});
-	}
-
-	json() {
-		return JSON.stringify(this.#data);
 	}
 }
 
@@ -58,14 +72,16 @@ export default class ClientSession {
 		res.cookie('accessToken', token, cookieOptions);
 	}
 
-	middleware(req, res, next) {
+	// Returns new SessoinObj to be set to req.clientSession
+	createSessionObj(payload, req, res) {
 		const jwtOptions = {
 			algorithm: 'HS256',
 		};
 
-		// Issues JWT if not already present.
-		if (req.cookies.accessToken === undefined) {
-			req.clientSession = new SessionPayload(undefined, (tokenPayload) => {
+		return new SessionObj(
+			payload,
+			req.ip,
+			(tokenPayload) => {
 				const token = jwt.sign(
 					{
 						exp: Math.floor(Date.now() / 1000) + this.expiresIn,
@@ -75,7 +91,23 @@ export default class ClientSession {
 					jwtOptions
 				);
 				this.updateCookie(token, req, res);
-			});
+			},
+			() => {
+				res.clearCookie('accessToken');
+				req.clientSession = this.createSessionObj(undefined, req, res);
+			}
+		);
+	}
+
+	// Method for app.use()
+	middleware(req, res, next) {
+		// Issues JWT if not already present.
+		if (req.cookies.accessToken === undefined) {
+			req.clientSession = req.clientSession = this.createSessionObj(
+				undefined,
+				req,
+				res
+			);
 			return next();
 		}
 
@@ -87,17 +119,12 @@ export default class ClientSession {
 
 			const tokenData = JSON.parse(payload.data);
 
-			req.clientSession = new SessionPayload(tokenData, (tokenPayload) => {
-				const token = jwt.sign(
-					{
-						exp: Math.floor(Date.now() / 1000) + this.expiresIn,
-						data: tokenPayload,
-					},
-					this.secret,
-					jwtOptions
-				);
-				this.updateCookie(token, req, res);
-			});
+			// Verifies stored IP is the same as request origin
+			if (tokenData.originIP !== req.ip) {
+				return res.sendStatus(403);
+			}
+
+			req.clientSession = this.createSessionObj(tokenData, req, res);
 			return next();
 		});
 	}

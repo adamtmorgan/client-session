@@ -4,7 +4,7 @@ Client-side session storage and management for Express in Node.js.
 
 ## About
 
-Client-session is Express middleware that issues and validates JWTs stored in a httpOnly cookie, and ties data to Express' req object. It behaves in a similar manner to Express-session, only without a store (since data is stored in the cookie/JWT). This eliminates the need to refer to a database for session-related data.
+Client-session is Express middleware that issues and validates JWTs stored in a httpOnly cookie, and ties data to Express' `req` object. It behaves in a similar manner to Express-session, only without a store (since data is stored in the cookie/JWT). This eliminates the need to refer to a database for session-related data.
 
 ## A note about security
 
