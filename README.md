@@ -8,11 +8,11 @@ Client-session is Express middleware that issues and validates JWTs stored in a 
 
 ## A note about security
 
-Because client-session uses **stateless tokens** for session storage, this does mean that it's impossible to dynamically invalidate tokens once they are issued without tracking them on the server side (in which case, traditional sessions are probably more practical). This isn't a problem in some applications not working with sensative/private data, however, you should use centralized sessions if you require the ability to terminate a session on-demand. Client-session shines in smaller applications where users need temporary state tracking and security isn't vital. You are also limited in the amount of data you can store in cookies, which is where the JWT is stored (max 4kb).
+Because client-session uses **stateless tokens** for session storage, this does mean that it's impossible to dynamically invalidate tokens once they are issued without tracking them on the server side (in which case, traditional sessions are probably more practical). This isn't a problem in some applications not working with sensative/private data, however, you should use centralized sessions if you require the ability to terminate a session on-demand. Client-session shines in smaller applications where users need temporary state tracking and strict control of the session's persistence isn't needed. You are also limited in the amount of data you can store in cookies, which is where the JWT is stored (max 4kb). One area you are protected, however, is from outside-network token usage. Any use of a token outside the network from which the token was issued will send a `HTTP 403` status code.
 
-**TLDR; If you need the following features, use *sessions* instead:**
+**TLDR; If you need the following features, use *standard server-side sessions* instead:**
 
-1. The ability to invalidate tokens on the server side (the best you can do is delete the cookie in this middleware or wait for it [and the token] to expire).
+1. The ability to invalidate tokens on the server side (the best you can do is delete the cookie in this middleware using the `clientSession.terminate()` method or wait for it [and the token] to expire).
 
 2. The ability to store more than 4kb worth of data in a session (session data is stored in cookies using this middleware).
 
@@ -66,8 +66,6 @@ app.get('/', (req, res) => {
 
 Now the value of `req.clientSession.name` will persist for any future requests made by the client.
 
-
-
 You can clear/delete the session any time using the `clientSession.terminate()` method.
 
 ```javascript
@@ -101,20 +99,20 @@ app.use(clientSession.middleware.bind(clientSession));
 app.get('/', (req, res) => {
     // req.clientSession object is now exposed
     if (req.clientSession.counter === undefined) {
-		req.clientSession.counter = 0;
-		return res.send(JSON.stringify(req.clientSession.counter));
-	}
+        req.clientSession.counter = 0;
+        return res.send(JSON.stringify(req.clientSession.counter));
+    }
 
-	req.clientSession.counter++;
-	console.log(req.clientSession);
+    req.clientSession.counter++;
+    console.log(req.clientSession);
 
-	if (req.clientSession.counter >= 5) {
-		req.clientSession.terminate();
-		console.log(req.clientSession);
-		return res.send(JSON.stringify('Session has been cleared.'));
-	}
+    if (req.clientSession.counter >= 5) {
+        req.clientSession.terminate();
+        console.log(req.clientSession);
+        return res.send(JSON.stringify('Session has been cleared.'));
+    }
 
-	return res.send(JSON.stringify(req.clientSession.counter));
+    return res.send(JSON.stringify(req.clientSession.counter));
 });
 
 // Listen!
