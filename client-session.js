@@ -4,8 +4,14 @@ import jwt from 'jsonwebtoken';
 // Internal dependencies
 import DeepProxy from './DeepProxy.js';
 
-// SessionObj Class -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
+/**
+ * Returns a new SessionObj that will be set to req.clientSession.
+ * @param {object} prevPayload payload from previous clientSession token
+ * @param {string} ip ip address from request origin
+ * @param {function} issueToken callback for issuing a new token and setting to a cookie
+ * @param {function} terminateCallback callback for terminating the session
+ * @returns new DeepProxy that calls the issueToken callback on property set and delete
+ */
 export class SessionObj {
 	// Fields
 	#data;
@@ -56,8 +62,18 @@ export class SessionObj {
 	}
 }
 
-// Main export for use as Express middleware -=-=-=-=-=-=-=-=-
-
+/**
+ * Returns a new ClientSession for use in Express.
+ * @param {object} options - {secret: 'Shhh', expiresIn: *seconds*}
+ * @returns new ClientSession as configured with options.
+ * @example
+ * const clientSession = new ClientSession({
+ * 	secret: 'Shhh',
+ * 	expres in: '24 * 60 * 60'
+ * });
+ *
+ * app.use(clientSession.middleware.bind(clientSession));
+ */
 export default class ClientSession {
 	constructor(options) {
 		this.secret = options.secret;
@@ -72,7 +88,13 @@ export default class ClientSession {
 		res.cookie('accessToken', token, cookieOptions);
 	}
 
-	// Returns new SessoinObj to be set to req.clientSession
+	/**
+	 * Returns a new SessionObj that will be set to req.clientSession.
+	 * @param {object} payload
+	 * @param {object} req
+	 * @param {object} res
+	 * @returns new SessionObj containing previous payload or empty (if payload is undefined)
+	 */
 	createSessionObj(payload, req, res) {
 		const jwtOptions = {
 			algorithm: 'HS256',
@@ -99,7 +121,14 @@ export default class ClientSession {
 		);
 	}
 
-	// Method for app.use()
+	/**
+	 * Method used as Express middleware. Bind instance to itself to preserve 'this'
+	 * @param {object} req
+	 * @param {object} res
+	 * @param {function} next
+	 * @example
+	 * app.use(clientSession.middleware().bind(clientSession));
+	 */
 	middleware(req, res, next) {
 		// Issues JWT if not already present.
 		if (req.cookies.accessToken === undefined) {
