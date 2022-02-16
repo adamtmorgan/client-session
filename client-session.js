@@ -1,3 +1,6 @@
+// Written by Adam Morgan
+// Copyright Bitfluent, LLC 2022
+
 // External dependencies
 import jwt from 'jsonwebtoken';
 
@@ -69,7 +72,7 @@ export class SessionObj {
  * @example
  * const clientSession = new ClientSession({
  * 	secret: 'Shhh',
- * 	expres in: '24 * 60 * 60'
+ * 	expres in: 24 * 60 * 60
  * });
  *
  * app.use(clientSession.middleware.bind(clientSession));
