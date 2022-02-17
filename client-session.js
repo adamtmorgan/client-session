@@ -8,12 +8,12 @@ import jwt from 'jsonwebtoken';
 import DeepProxy from './DeepProxy.js';
 
 /**
- * Returns a new SessionObj that will be set to req.clientSession.
- * @param {object} prevPayload payload from previous clientSession token
- * @param {string} ip ip address from request origin
- * @param {function} issueToken callback for issuing a new token and setting to a cookie
- * @param {function} terminateCallback callback for terminating the session
- * @returns new DeepProxy that calls the issueToken callback on property set and delete
+ * Returns a new SessionObj meant to be set to req.clientSession.
+ * @param {object} prevPayload payload from previous clientSession token.
+ * @param {string} ip ip address from request origin.
+ * @param {function} issueToken callback for issuing a new token and setting to a cookie.
+ * @param {function} terminateCallback callback for terminating the session.
+ * @returns new DeepProxy that calls the issueToken callback on property set and delete.
  */
 export class SessionObj {
 	// Fields
@@ -41,23 +41,35 @@ export class SessionObj {
 			};
 		}
 
+		/**
+		 * For determining if a property is reserved in SessionObj
+		 * @param {string} rootProp 
+		 * @returns true if property is reserved. false if it's not.
+		 */
+		function reservedProp(rootProp) {
+			const reservedProps = ['originIP', 'terminate'];
+			for (let prop of reservedProps) {
+				if (rootProp === prop) {
+					return true;
+				}
+			}
+			return false;
+		}
+
 		// Tracks object tree.
 		// Generates new JWT and applies it to response cookie on property set.
 		return new DeepProxy(this.#data, {
-			set(key, _value, _receiver) {
-				if (key === `originIP` || key === `terminate`) {
-					throw new Error(
-						`req.clientSession.${key} is a reserved property and cannot be set.`
-					);
+			set(_target, key, _value, _receiver) {
+				if (reservedProp(key[0])) {
+					throw new Error(`client-session: ${key[0]} is a reserved property and cannot be set.`)
 				}
 				self.#issueToken(JSON.stringify(self.#data));
 			},
 
 			deleteProperty(_target, key) {
-				if (key === `originIP` || key === `terminate`) {
-					throw new Error(
-						`req.clientSession.${key} is a reserved property and cannot be deleted.`
-					);
+				console.log(key[0]);
+				if (reservedProp(key[0])) {
+					throw new Error(`client-sesion: ${key[0]} is a reserved property and cannot be deleted.`)
 				}
 				self.#issueToken(JSON.stringify(self.#data));
 			},
@@ -72,7 +84,7 @@ export class SessionObj {
  * @example
  * const clientSession = new ClientSession({
  * 	secret: 'Shhh',
- * 	expres in: 24 * 60 * 60
+ * 	expresIn: 24 * 60 * 60
  * });
  *
  * app.use(clientSession.middleware.bind(clientSession));
