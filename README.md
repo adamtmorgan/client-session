@@ -22,7 +22,7 @@ Because client-session uses **stateless tokens** for session storage, this does 
 
 2. Be sure `cookie-parser` middleware for Express installed and used on any routes that will be using the session.
 
-3. Create a `new ClientSession({})` instance from the ClientSession and configure as desired. We will name the instance `clientSession` in this documentation. The configuration object has two properties: `secret` and `expiresIn`.
+3. Create a `new ClientSession({})` instance from the ClientSession and configure as desired. We will name the instance `clientSession` in this documentation. The configuration object has three required properties: `secret` , `expiresIn`, and `restrictIPAccess`.
    
    1. `secret` is what's used to sign and validate the JWT. You can place whatever you want here. Keep it in a safe place!
    
