@@ -79,12 +79,13 @@ export class SessionObj {
 
 /**
  * Returns a new ClientSession for use in Express.
- * @param {object} options - {secret: 'Shhh', expiresIn: *seconds*}
+ * @param {object} options - {secret: String, expiresIn: Number (seconds), restrictIPAccess: Boolean}
  * @returns new ClientSession as configured with options.
  * @example
  * const clientSession = new ClientSession({
- * 	secret: 'Shhh',
- * 	expresIn: 24 * 60 * 60
+ * 	secret: 'Shhh', // Used to sign tokens
+ * 	expresIn: 24 * 60 * 60, // Life of token and cookie in seconds
+ * 	restrictIPAccess: false // Deny access if token is used from a different IP than it was issued from
  * });
  *
  * app.use(clientSession.middleware.bind(clientSession));
@@ -93,6 +94,7 @@ export default class ClientSession {
 	constructor(options) {
 		this.secret = options.secret;
 		this.expiresIn = options.expiresIn;
+		this.restrictIPAccess = options.restrictIPAccess;
 	}
 
 	updateCookie(token, _req, res) {
@@ -163,13 +165,13 @@ export default class ClientSession {
 
 			const tokenData = JSON.parse(payload.data);
 
-			// Verifies stored IP is the same as request origin
-			if (tokenData.originIP !== req.ip) {
+			// Verifies stored IP is the same as request origin if restrictIPAccess enabled.
+			if (tokenData.originIP !== req.ip && this.restrictIPAccess) {
 				return res.sendStatus(403);
 			}
 
 			req.clientSession = this.createSessionObj(tokenData, req, res);
-			return next();
+			next();
 		});
 	}
 }
