@@ -24,7 +24,7 @@ Because client-session uses **stateless tokens** for session storage, this does 
 
 3. Create a `new ClientSession({})` instance from the ClientSession and configure as desired. We will name the instance `clientSession` in this documentation. The configuration object has three required properties: `secret` , `expiresIn`, and `restrictIPAccess`.
    
-   1. `secret` is what's used to sign and validate the JWT. You can place whatever you want here. Keep it in a safe place!
+   1. `secret` is what's used to sign and validate the JWT. You can place any string you want here. Keep it in a safe place!
    
    2. `expiresIn` is the number of seconds you wish the session to be alive for. A new token with this duration is issued and sent with each response.
    
