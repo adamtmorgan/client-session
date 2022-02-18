@@ -27,6 +27,8 @@ Because client-session uses **stateless tokens** for session storage, this does 
    1. `secret` is what's used to sign and validate the JWT. You can place whatever you want here. Keep it in a safe place!
    
    2. `expiresIn` is the number of seconds you wish the session to be alive for. A new token with this duration is issued and sent with each response.
+   
+   3. `restrictIPAccess` will reject tokens sent from a different IP than they were issued from, if enabled. This is better for security, but also means users may need to prove their identity (via login, for example) more often if moving between offices, the coffee shop, etc.
 
 4. Use`clientSession.middleware.bind(clientSession)` on any routes you wish to use client-session. We use the `bind()` method on itself to preserve `this` when used inside of the `app.use()` method.
    
@@ -49,6 +51,7 @@ import ClientSession from 'client-session';
 const clientSession = new ClientSession({
     secret: 'Shhhhhh',
     expiresIn: 7 * 24 * 60 * 60, // Expires in 7 days.
+    restrictIPAccess: false // Better user experience, worse security.
 });
 // Bind clientSession object to itself to preserve 'this'
 app.use(clientSession.middleware.bind(clientSession));
@@ -91,6 +94,7 @@ import ClientSession from 'client-session';
 const clientSession = new ClientSession({
     secret: 'Shhhhhh',
     expiresIn: 7 * 24 * 60 * 60, // Expires in 7 days.
+    restrictIPAccess: false
 });
 // Bind clientSession object to itself to preserve 'this'
 app.use(clientSession.middleware.bind(clientSession));
